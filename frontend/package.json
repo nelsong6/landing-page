@@ -1,0 +1,10 @@
+{
+  "name": "landing-page",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html style.css dist/",
+    "test": "echo \"No tests\" && exit 0",
+    "lint": "echo \"No linter\" && exit 0"
+  }
+}
