@@ -1,0 +1,43 @@
+name: Trigger Infra Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  trigger:
+    name: Trigger infra-bootstrap
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install spacectl
+      uses: spacelift-io/setup-spacectl@v1
+
+    - name: Azure Login via OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ vars.ARM_CLIENT_ID }}
+        tenant-id: ${{ vars.ARM_TENANT_ID }}
+        subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
+
+    - name: Fetch Spacelift Credentials from Key Vault
+      run: |
+        KV_ID=$(az keyvault secret show --vault-name "${{ vars.KEY_VAULT_NAME }}" --name spacelift-api-key-id --query value -o tsv)
+        echo "::add-mask::$KV_ID"
+        echo "SPACELIFT_API_KEY_ID=$KV_ID" >> $GITHUB_ENV
+
+        KV_SECRET=$(az keyvault secret show --vault-name "${{ vars.KEY_VAULT_NAME }}" --name spacelift-api-key-secret --query value -o tsv)
+        echo "::add-mask::$KV_SECRET"
+        echo "SPACELIFT_API_KEY_SECRET=$KV_SECRET" >> $GITHUB_ENV
+
+    - name: Trigger infra-bootstrap stack
+      env:
+        SPACELIFT_API_KEY_ENDPOINT: 'https://nelsong6.app.us.spacelift.io'
+      run: |
+        spacectl stack deploy --id infra-bootstrap --tail
