@@ -1,11 +1,15 @@
 name: Deploy Landing Page
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
   workflow_dispatch:
 
 permissions:
   id-token: write
-  contents: write
+  contents: read
 
 jobs:
   deploy:
@@ -16,34 +20,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install spacectl
-      uses: spacelift-io/setup-spacectl@v1
-
     - name: Azure Login via OIDC
       uses: azure/login@v2
       with:
         client-id: ${{ vars.ARM_CLIENT_ID }}
         tenant-id: ${{ vars.ARM_TENANT_ID }}
         subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
-
-    - name: Fetch Spacelift Credentials from Key Vault
-      run: |
-        KV_ID=$(az keyvault secret show --vault-name "${{ vars.KEY_VAULT_NAME }}" --name spacelift-api-key-id --query value -o tsv)
-        echo "::add-mask::$KV_ID"
-        echo "SPACELIFT_API_KEY_ID=$KV_ID" >> $GITHUB_ENV
-
-        KV_SECRET=$(az keyvault secret show --vault-name "${{ vars.KEY_VAULT_NAME }}" --name spacelift-api-key-secret --query value -o tsv)
-        echo "::add-mask::$KV_SECRET"
-        echo "SPACELIFT_API_KEY_SECRET=$KV_SECRET" >> $GITHUB_ENV
-
-    - name: Fetch App Config from Spacelift
-      env:
-        SPACELIFT_API_KEY_ENDPOINT: 'https://nelsong6.app.us.spacelift.io'
-      run: |
-        INFRA_OUTPUTS=$(spacectl stack outputs --id "infra-bootstrap" --output json)
-
-        echo "STATIC_WEB_APP_NAME=$(echo "$INFRA_OUTPUTS" | jq -r '.[] | select(.id == "landing_page_static_web_app_name") | .value | fromjson')" >> $GITHUB_ENV
-        echo "RESOURCE_GROUP_NAME=$(echo "$INFRA_OUTPUTS" | jq -r '.[] | select(.id == "landing_page_resource_group_name") | .value | fromjson')" >> $GITHUB_ENV
 
     - name: Build frontend
       working-directory: ./frontend
@@ -54,7 +36,7 @@ jobs:
     - name: Get Static Web App Deployment Token
       id: static-web-app-token
       run: |
-        TOKEN=$(az staticwebapp secrets list --name ${{ env.STATIC_WEB_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP_NAME }} --query "properties.apiKey" -o tsv)
+        TOKEN=$(az staticwebapp secrets list --name landing-page-app --resource-group landing-page-rg --query "properties.apiKey" -o tsv)
         echo "::add-mask::$TOKEN"
         echo "deployment_token=$TOKEN" >> $GITHUB_OUTPUT
 
