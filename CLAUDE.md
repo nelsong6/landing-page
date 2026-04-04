@@ -17,4 +17,4 @@ Infrastructure (SWA, DNS, custom domain) lives in infra-bootstrap, not here. Thi
 
 ### 2026-04-02
 
-- Added fuzzy-tiers-showcase (fzh.romaine.life) to the app list — interactive web demo of fzh fuzzy finder running Go scoring via WASM
+- Added fzt-showcase (fzh.romaine.life) to the app list — interactive web demo of fzh fuzzy finder running Go scoring via WASM
