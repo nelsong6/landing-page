@@ -2,7 +2,7 @@
 
 Simple static landing page for romaine.life (apex domain). Lists all apps with links and GitHub repo icons.
 
-Infrastructure (SWA, DNS, custom domain) lives in infra-bootstrap, not here. This repo only contains the frontend static files.
+Served from AKS (namespace `landing-page`) by a Node+Express container that static-serves `frontend/`. Apex DNS (`romaine.life`) and the Envoy Gateway / cert-manager wiring live in infra-bootstrap; the per-app routing manifests (HTTPRoute, XListenerSet, Certificate, Deployment, Service) live in `k8s/` here.
 
 ## Change Log
 
@@ -18,3 +18,7 @@ Infrastructure (SWA, DNS, custom domain) lives in infra-bootstrap, not here. Thi
 ### 2026-04-02
 
 - Added fzt-showcase (fzh.romaine.life) to the app list — interactive web demo of fzh fuzzy finder running Go scoring via WASM
+
+### 2026-05-07
+
+- Migrated off Azure Static Web Apps to AKS. Apex `romaine.life` is now served by a Node+Express container (`romainecr.azurecr.io/landing-page`) in namespace `landing-page`, behind the shared Envoy Gateway with a cert-manager-issued cert. Replaced `full-stack-deploy.yml` with `build-and-deploy.yaml` (mirrors my-homepage's pattern: ACR push + kustomize image bump + release tag). Frontend build step removed — Express serves `frontend/` directly
